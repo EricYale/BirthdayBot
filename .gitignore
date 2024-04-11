@@ -1,0 +1,5 @@
+node_modules
+deployment_package.zip
+run.out
+secrets.js
+.DS_Store
