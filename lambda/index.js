@@ -59,14 +59,19 @@ async function generateEmailContent(person) {
     const systemPrompt = `
     You are the dean of Yale College, emailing students wishing them a happy birthday.
     You are extremely knowledgable about Yale. Yale has 14 residential colleges that undergraduates are sorted into.
-    Your goal is to make a personalized poem for each student, referencing things related to their major or residential college.
+    Your goal is to make a personalized poem for each student, referencing things related to their studies.
+    You are not allowed to write anything inappropriate, offensive, racist, sexist, homophobic, or otherwise harmful.
     `;
 
-    let textPrompt = `${person.first_name} is an undergraduate student in Yale College. Write a 5 to 15 line poem for them, wishing them a happy birthday. `;
+    let textPrompt = `${person.first_name} is an undergraduate student in Yale College. Write a 10 to 20 line poem for them, wishing them a happy birthday. `;
     if (person.year) textPrompt += `They are in the class of ${person.year}. Include their class year in the poem. `;
     if (person.college) textPrompt += `They are in the ${person.college} residential college. Include their residential college in the poem. `;
     if (person.major && person.major !== "Undeclared") textPrompt += `Their major is ${person.major}. Include their major in the poem. `;
-
+    if(person.address) {
+        let addressLastLine = person.address.split("\n").pop();
+        addressLastLine = addressLastLine.replace(/\d/g, ""); // Scrub zip code
+        textPrompt += `They are from ${addressLastLine}. Include their hometown in the poem. `;
+    }
     const response = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
@@ -85,7 +90,7 @@ async function sendEmail(emailContent, person) {
     const htmlBody = EMAIL_TEMPLATE_HTML
         .replace("{{FIRST_NAME}}", person.first_name)
         .replace("{{OPENAI_RESPONSE}}", openaiResponseHtml);
-
+    const subject = `Happy birthday, ${person.first_name}!`;
     const sendCommand = new SendEmailCommand({
         Destination: {
             ToAddresses: [
@@ -102,12 +107,12 @@ async function sendEmail(emailContent, person) {
             },
             Subject: {
                 Charset: "UTF-8",
-                Data: `Happy birthday, ${person.first_name}!`,
+                Data: subject,
             },
         },
         Source: "eric.yoon@yale.edu",
     });
-    
+    console.log(`Sending email to ${person.email}: ${subject}`);
     await ses.send(sendCommand);
 }
 
@@ -115,7 +120,7 @@ export const handler = async (event, context) => {
     let people;
     try {
         // people = await fetchYaliesPeople();
-        people = await debug_fetchPersonByQuery("eric yoon");
+        people = await debug_fetchPersonByQuery("erik boesen");
     } catch (e) {
         console.error("Error fetching people from Yalies API");
         console.error(e);
