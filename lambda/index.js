@@ -5,7 +5,7 @@ import { EMAIL_TEMPLATE_HTML } from "./emailTemplates.js";
 
 const DEBUG_ONLY_PROCESS_ONE_PERSON = false;
 const DEBUG_DO_NOT_SEND_MAIL = false;
-const DEBUG_SEND_MAIL_TO_ERIC = true;
+const DEBUG_SEND_MAIL_TO_ERIC = false;
 
 const ses = new SESClient({ region: AWS_SES_REGION });
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
