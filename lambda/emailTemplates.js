@@ -3,7 +3,7 @@ export const EMAIL_TEMPLATE_HTML = `
     <body>
         <p>
             Dear {{FIRST_NAME}},<br>
-            Here's a special message on your special day, prepared by the Yalies.io team.
+            I've prepared a poem for you on your special day!
         </p>
         
         <p style="font-family: 'Lucida', serif; font-style: italic; color: #00356b; font-size: 12pt;">
@@ -13,15 +13,14 @@ export const EMAIL_TEMPLATE_HTML = `
         <p>
             Have a great day,<br>
             The
-            <a href="https://yalies.io" style="color: inherit;">Yalies.io</a>
-            team
+            <a href="https://github.com/Yalies/BirthdayBot" style="color: inherit;">Yale Birthday Bot</a>
         </p>
 
         <footer style="color: #777777; font-size: 8pt; margin-top: 20px;">
-            ChatGPT is our muse and is responsible for the poem.<br>
             Your birthday and other data were sourced from Yale's public directory, which you can remove by following
             <a href="https://yalies.io/faq" style="color: inherit;">these instructions</a>.<br>
-            <a href="https://github.com/Yalies/BirthdayBot" style="color: inherit;">Check out BirthdayBot on Github.</a>
+            ChatGPT is responsible for the contents of this poem. Like what you see? Something not in good taste? Reply to this email with your feedback.<br>
+            Maintained by <a href="https://yoonicode.com?utm_source=birthday-mail&utm_medium=email&utm_id=birthday-bot-footer" style="color: inherit;">Eric Yoon '27</a>.<br>
         </footer>
     </body>
 </html>

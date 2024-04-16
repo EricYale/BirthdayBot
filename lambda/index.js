@@ -3,6 +3,10 @@ import OpenAI from "openai";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { EMAIL_TEMPLATE_HTML } from "./emailTemplates.js";
 
+const DEBUG_ONLY_PROCESS_ONE_PERSON = false;
+const DEBUG_DO_NOT_SEND_MAIL = false;
+const DEBUG_SEND_MAIL_TO_ERIC = true;
+
 const ses = new SESClient({ region: AWS_SES_REGION });
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -49,6 +53,10 @@ async function debug_fetchPersonByQuery(query) {
 }
 
 async function handlePerson(person) {
+    const currentDate = new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"}));
+    if(person.birth_month != currentDate.getMonth() + 1) return;
+    if(person.birth_day != currentDate.getDate()) return;
+
     if(!person.first_name || !person.email) return;
     const emailContent = await generateEmailContent(person);
     if (!emailContent) return;
@@ -64,6 +72,7 @@ async function generateEmailContent(person) {
     `;
 
     let textPrompt = `${person.first_name} is an undergraduate student in Yale College. Write a 10 to 20 line poem for them, wishing them a happy birthday. `;
+    // textPrompt += `If possible, include a tasteful, respectful, and appropriate pun involving their name. `;
     if (person.year) textPrompt += `They are in the class of ${person.year}. Include their class year in the poem. `;
     if (person.college) textPrompt += `They are in the ${person.college} residential college. Include their residential college in the poem. `;
     if (person.major && person.major !== "Undeclared") textPrompt += `Their major is ${person.major}. Include their major in the poem. `;
@@ -93,10 +102,8 @@ async function sendEmail(emailContent, person) {
     const subject = `Happy birthday, ${person.first_name}!`;
     const sendCommand = new SendEmailCommand({
         Destination: {
-            ToAddresses: [
-                // person.email
-                "eric.yoon@yale.edu"
-            ],
+            BccAddresses: ["celebration@yalebirthdays.com"],
+            ToAddresses: DEBUG_SEND_MAIL_TO_ERIC ? ["eric.yoon@yale.edu"] : [person.email],
         },
         Message: {
             Body: {
@@ -110,23 +117,23 @@ async function sendEmail(emailContent, person) {
                 Data: subject,
             },
         },
-        Source: "eric.yoon@yale.edu",
+        Source: `"Yale Birthdays" <celebration@yalebirthdays.com>`,
     });
     console.log(`Sending email to ${person.email}: ${subject}`);
-    await ses.send(sendCommand);
+    if(!DEBUG_DO_NOT_SEND_MAIL) await ses.send(sendCommand);
 }
 
 export const handler = async (event, context) => {
     let people;
     try {
-        // people = await fetchYaliesPeople();
-        people = await debug_fetchPersonByQuery("erik boesen");
+        people = await fetchYaliesPeople();
     } catch (e) {
         console.error("Error fetching people from Yalies API");
         console.error(e);
     }
-    const promises = people.map(handlePerson);
+    if(DEBUG_ONLY_PROCESS_ONE_PERSON) people = people.slice(0, 1);
 
+    const promises = people.map(handlePerson);
     try {
         await Promise.all(promises);
     } catch (e) {
