@@ -11,36 +11,20 @@ const ses = new SESClient({ region: AWS_SES_REGION });
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 async function fetchYaliesPeople() {
-    const data = {
-        boost_birthdays: true,
-        filters: {
-            school_code: ["YC"],
-        },
-        page: 1,
-        page_size: 1,
-    };
-    const response = await fetch(`https://yalies.io/api/people`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${YALIES_API_KEY}`,
-        },
-        body: JSON.stringify(data),
-    });
-    const json = await response.json();
-    return json;
-}
+    const currentDate = new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const month = currentDate.getMonth() + 1;
+    const day = currentDate.getDate();
 
-async function debug_fetchPersonByQuery(query) {
     const data = {
         filters: {
             school_code: ["YC"],
+            birth_month: [month],
+            birth_day: [day],
         },
-        query,
-        page: 1,
-        page_size: 1,
+        page: 0,
+        page_size: 100,
     };
-    const response = await fetch(`https://yalies.io/api/people`, {
+    const response = await fetch(`https://api.yalies.io/v2/people`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -48,12 +32,20 @@ async function debug_fetchPersonByQuery(query) {
         },
         body: JSON.stringify(data),
     });
+    if(!response.ok) {
+        const text = await response.text();
+        console.error("Error fetching people from Yalies API");
+        console.error(text);
+        return null;
+    }
     const json = await response.json();
     return json;
 }
 
 async function handlePerson(person) {
     const currentDate = new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"}));
+
+    // Sanity checks
     if(person.birth_month != currentDate.getMonth() + 1) return;
     if(person.birth_day != currentDate.getDate()) return;
 
@@ -130,6 +122,11 @@ export const handler = async (event, context) => {
     } catch (e) {
         console.error("Error fetching people from Yalies API");
         console.error(e);
+        return context.logStreamName;
+    }
+    if(!people) {
+        console.error("No people found, or error fetching people");
+        return context.logStreamName;
     }
     if(DEBUG_ONLY_PROCESS_ONE_PERSON) people = people.slice(0, 1);
 
