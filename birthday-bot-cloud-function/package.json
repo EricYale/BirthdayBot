@@ -1,0 +1,11 @@
+{
+  "name": "birthday-bot-cloud-function",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.552.0",
+    "@google/generative-ai": "^0.24.1",
+    "node-fetch": "^3.3.2"
+  }
+}
